@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import React, { useEffect } from 'react'
 import { fetchUsers } from '../api/API';
+import { useInView } from 'react-intersection-observer';
 
 const InfiniteScroll = () => {
 
@@ -12,20 +13,31 @@ const InfiniteScroll = () => {
         }
     })
 
-    console.log(data);
+    //------------------------Old way - using plain JavaScript--------------------------------------------------
 
-    const handleScroll = () => {
-        const bottom = window.innerHeight + window.scrollY > document.documentElement.scrollHeight - 1;
+    // const handleScroll = () => {
+    //     const bottom = window.innerHeight + window.scrollY > document.documentElement.scrollHeight - 1;
 
-        if (bottom && hasNextPage) {
-            fetchNextPage();
-        }
-    }
+    //     if (bottom && hasNextPage) {
+    //         fetchNextPage();
+    //     }
+    // }
+
+    // useEffect(() => {
+    //     window.addEventListener("scroll", handleScroll)
+    //     return () => window.removeEventListener("scroll", handleScroll)
+    // }, [hasNextPage])
+
+    //------------------ Using react-intersection-observer------------------------------------------------------
+
+    const { ref, inView } = useInView({
+        threshold: 1,
+    })
 
     useEffect(() => {
-        window.addEventListener("scroll", handleScroll)
-        return () => window.removeEventListener("scroll", handleScroll)
-    }, [])
+        if (inView && hasNextPage)
+            fetchNextPage();
+    }, [fetchNextPage, inView, hasNextPage])
 
     if (status === "loading") {
         return (<div className="loader"></div>)
@@ -57,9 +69,15 @@ const InfiniteScroll = () => {
                     </ul>
                 })
             }
-            {
-                isFetchingNextPage && <h3>Loading More...</h3>
-            }
+            {/* {isFetchingNextPage && <h3>Loading More...</h3>} */}
+
+            <h2 ref={ref} style={{padding: "20px", textAlign: "center", color: "white"}}>
+                {isFetchingNextPage
+                ? "Loading More..."
+                : hasNextPage
+                ? "Scroll down to load more"
+                : "No more users"}
+            </h2>
         </div>
     )
 }
